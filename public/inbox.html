@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -104,5 +104,152 @@
     fetchMessages();
     setInterval(fetchMessages, 5000); // Refresh messages every 5 seconds
   </script>
+</body>
+</html> -->
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Inbox</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .chat-header {
+            background-color: #4682B4;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 18px;
+        }
+        .chat-body {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .message {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+            max-width: 80%;
+        }
+        .message.sent {
+            background-color: #DCF8C6;
+            align-self: flex-end;
+        }
+        .message.received {
+            background-color: #fff;
+            align-self: flex-start;
+        }
+        .chat-footer {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+        .chat-footer input, .chat-footer button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .chat-footer input {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .chat-footer button {
+            background-color: #4682B4;
+            color: white;
+            cursor: pointer;
+        }
+        .chat-footer button:hover {
+            background-color: #357ABD;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chat-header">Chat Inbox</div>
+        <div class="chat-body" id="chatBody"></div>
+        <div class="chat-footer">
+            <input type="text" id="messageInput" placeholder="Type your message here..." required>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBody = document.getElementById('chatBody');
+        let recipientPhoneNumber = '';
+
+        function fetchMessages() {
+            fetch('/messages')
+                .then(response => response.json())
+                .then(data => {
+                    chatBody.innerHTML = '';
+                    data.forEach(message => {
+                        const messageElement = document.createElement('div');
+                        messageElement.classList.add('message');
+                        messageElement.classList.add(message.sent ? 'sent' : 'received');
+                        messageElement.innerText = `${message.name} (${message.from}): ${message.text}`;
+                        chatBody.appendChild(messageElement);
+                    });
+                })
+                .catch(error => console.error('Error fetching messages:', error));
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const messageText = messageInput.value.trim();
+
+            if (!messageText || !recipientPhoneNumber) {
+                alert('Please select a message to reply and enter a message text.');
+                return;
+            }
+
+            fetch('/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ to: recipientPhoneNumber, message: messageText }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const sentMessageElement = document.createElement('div');
+                    sentMessageElement.classList.add('message', 'sent');
+                    sentMessageElement.innerText = `You: ${messageText}`;
+                    chatBody.appendChild(sentMessageElement);
+                    messageInput.value = '';
+                } else {
+                    alert(`Failed to send message: ${data.error}`);
+                }
+            })
+            .catch(error => console.error('Error sending message:', error));
+        }
+
+        // Initial fetch of messages
+        fetchMessages();
+
+        // Fetch messages every 5 seconds
+        setInterval(fetchMessages, 5000);
+    </script>
 </body>
 </html>

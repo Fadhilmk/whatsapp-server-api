@@ -70,12 +70,12 @@ const path = require('path');
 const app = express();
 app.use(bodyParser.json());
 
-// Serve the HTML files
-app.use(express.static(path.join(__dirname, 'public')));
-
 const { GRAPH_API_TOKEN, BUSINESS_PHONE_NUMBER_ID, VERIFY_TOKEN, PORT } = process.env;
 
 let messages = [];
+
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Webhook endpoint to receive messages
 app.post('/webhook', async (req, res) => {
@@ -182,6 +182,11 @@ app.get('/webhook', (req, res) => {
   } else {
     res.sendStatus(400);
   }
+});
+
+// Serve the inbox HTML file at the /inbox route
+app.get('/inbox', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'inbox.html'));
 });
 
 const port = PORT || 3000;

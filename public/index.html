@@ -43,17 +43,6 @@
     .message p {
       margin: 0;
     }
-    .delete-btn {
-      background-color: #ff4d4d;
-      color: white;
-      border: none;
-      border-radius: 3px;
-      padding: 5px 10px;
-      cursor: pointer;
-    }
-    .delete-btn:hover {
-      background-color: #e60000;
-    }
     .send-message {
       display: flex;
       margin-top: 20px;
@@ -118,10 +107,9 @@
         messageDiv.className = 'message';
         messageDiv.innerHTML = `
           <div>
-            <p><strong>${message.name} (${number})</strong></p>
+            <p><strong>${message.from}</strong></p>
             <p>${message.text}</p>
           </div>
-          <button class="delete-btn" onclick="deleteMessage('${message.id}')">Delete</button>
         `;
         messagesDiv.appendChild(messageDiv);
       });
@@ -148,18 +136,6 @@
         loadMessages(selectedNumber);
       } else {
         alert('Failed to send message.');
-      }
-    }
-
-    async function deleteMessage(id) {
-      const response = await fetch(`/delete/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        loadMessages(selectedNumber);
-      } else {
-        alert('Failed to delete message.');
       }
     }
 

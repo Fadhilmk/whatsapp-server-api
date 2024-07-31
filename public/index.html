@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Message</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4682B4;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #357ABD;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Send a Message</h1>
+        <form id="messageForm">
+            <input type="text" id="recipient" placeholder="Recipient Phone Number" required />
+            <textarea id="message" rows="4" placeholder="Type your message here..." required></textarea>
+            <button type="submit">Send Message</button>
+        </form>
+        <div id="responseMessage"></div>
+    </div>
+
+    <script>
+        document.getElementById('messageForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            
+            const recipient = document.getElementById('recipient').value;
+            const message = document.getElementById('message').value;
+
+            try {
+                const response = await fetch('/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ to: recipient, message })
+                });
+
+                if (response.ok) {
+                    document.getElementById('responseMessage').innerText = 'Message sent successfully!';
+                } else {
+                    const errorData = await response.json();
+                    document.getElementById('responseMessage').innerText = `Failed to send message: ${errorData.error}`;
+                }
+            } catch (error) {
+                document.getElementById('responseMessage').innerText = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -67,8 +67,7 @@ const path = require("path");
 const app = express();
 app.use(bodyParser.json());
 
-const { GRAPH_API_TOKEN, BUSINESS_PHONE_NUMBER_ID, VERIFY_TOKEN, PORT } =
-  process.env;
+const { GRAPH_API_TOKEN, BUSINESS_PHONE_NUMBER_ID, VERIFY_TOKEN, PORT } = process.env;
 
 let messages = [];
 
@@ -84,13 +83,7 @@ app.post("/webhook", async (req, res) => {
       const changes = entry[0].changes[0];
       const receivedMessages = changes.value.messages;
       const contacts = changes.value.contacts;
-      const name =
-        contacts &&
-        contacts[0] &&
-        contacts[0].profile &&
-        contacts[0].profile.name
-          ? contacts[0].profile.name
-          : "Customer";
+      const name = contacts && contacts[0] && contacts[0].profile && contacts[0].profile.name ? contacts[0].profile.name : "Customer";
 
       if (receivedMessages && receivedMessages.length > 0) {
         const message = receivedMessages[0];
@@ -100,7 +93,7 @@ app.post("/webhook", async (req, res) => {
         console.log("Received message:", text);
 
         // Store the received message
-        messages.push({ from, text, name, sent: false });
+        messages.push({ id: `${Date.now()}`, from, text, name, sent: false });
 
         // Mark the message as read
         await axios({
@@ -167,13 +160,24 @@ app.post("/send", async (req, res) => {
     console.log(`Message sent to ${to}: ${message}`);
 
     // Store the sent message
-    messages.push({ from: to, text: message, name: "You", sent: true });
+    messages.push({ id: `${Date.now()}`, from: to, text: message, name: "You", sent: true });
 
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Error sending message:", error);
     res.status(500).json({ error: "Failed to send message" });
   }
+});
+
+// Endpoint to delete a message
+app.delete("/delete/:id", (req, res) => {
+  const { id } = req.params;
+  const messageIndex = messages.findIndex(msg => msg.id === id);
+  if (messageIndex === -1) {
+    return res.status(404).json({ success: false, error: "Message not found." });
+  }
+  messages.splice(messageIndex, 1);
+  res.json({ success: true });
 });
 
 // Endpoint for webhook verification
@@ -203,4 +207,3 @@ const port = PORT || 3000;
 app.listen(port, () => {
   console.log(`Server is listening on port: ${port}`);
 });
-

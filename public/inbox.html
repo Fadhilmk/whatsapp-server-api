@@ -1,255 +1,143 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chat Inbox</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      background-color: #f9f9f9;
-    }
-    .message {
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
-    }
-    .message:nth-child(even) {
-      background-color: #f1f1f1;
-    }
-    .send-container {
-      margin-top: 20px;
-    }
-    input, textarea, button {
-      width: 100%;
-      padding: 10px;
-      margin: 5px 0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-    button {
-      background-color: #4682B4;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #357ABD;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Chat Inbox</h1>
-    <div id="messages"></div>
-    <div class="send-container">
-      <h2>Send a Message</h2>
-      <form id="sendMessageForm">
-        <input type="text" id="recipient" placeholder="Recipient Phone Number" required />
-        <textarea id="message" rows="4" placeholder="Type your message here..." required></textarea>
-        <button type="submit">Send Message</button>
-      </form>
-      <div id="responseMessage"></div>
-    </div>
-  </div>
-
-  <script>
-    async function fetchMessages() {
-      try {
-        const response = await fetch('/messages');
-        const messages = await response.json();
-        const messagesContainer = document.getElementById('messages');
-        messagesContainer.innerHTML = messages.map(msg => `<div class="message"><strong>${msg.name} (${msg.from}):</strong> ${msg.text}</div>`).join('');
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-      }
-    }
-
-    document.getElementById('sendMessageForm').addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      const recipient = document.getElementById('recipient').value;
-      const message = document.getElementById('message').value;
-
-      try {
-        const response = await fetch('/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ to: recipient, message })
-        });
-
-        if (response.ok) {
-          document.getElementById('responseMessage').innerText = 'Message sent successfully!';
-          document.getElementById('sendMessageForm').reset();
-        } else {
-          const errorData = await response.json();
-          document.getElementById('responseMessage').innerText = `Failed to send message: ${errorData.error}`;
-        }
-      } catch (error) {
-        document.getElementById('responseMessage').innerText = `Error: ${error.message}`;
-      }
-
-      fetchMessages();
-    });
-
-    fetchMessages();
-    setInterval(fetchMessages, 5000); // Refresh messages every 5 seconds
-  </script>
-</body>
-</html> -->
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Inbox</title>
+    <title>Inbox</title>
     <style>
+        /* Add your CSS styles here */
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            background-color: #f5f5f5;
             margin: 0;
-            padding: 0;
+            padding: 20px;
         }
         .container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
             max-width: 600px;
-            margin: auto;
+            margin: 0 auto;
             background-color: #fff;
-            border: 1px solid #ddd;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 5px;
-            overflow: hidden;
-        }
-        .chat-header {
-            background-color: #4682B4;
-            color: white;
-            padding: 10px;
-            text-align: center;
-            font-size: 18px;
-        }
-        .chat-body {
-            flex: 1;
-            padding: 10px;
-            overflow-y: auto;
         }
         .message {
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 5px;
-            background-color: #f1f1f1;
-            max-width: 80%;
-        }
-        .message.sent {
-            background-color: #DCF8C6;
-            align-self: flex-end;
-        }
-        .message.received {
-            background-color: #fff;
-            align-self: flex-start;
-        }
-        .chat-footer {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding: 10px;
-            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
         }
-        .chat-footer input, .chat-footer button {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+        .message:last-child {
+            border-bottom: none;
         }
-        .chat-footer input {
-            flex: 1;
-            margin-right: 10px;
+        .message p {
+            margin: 0;
         }
-        .chat-footer button {
-            background-color: #4682B4;
+        .delete-btn {
+            background-color: #ff4d4d;
             color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 5px 10px;
             cursor: pointer;
         }
-        .chat-footer button:hover {
-            background-color: #357ABD;
+        .delete-btn:hover {
+            background-color: #e60000;
+        }
+        .send-message {
+            display: flex;
+            margin-top: 20px;
+        }
+        .send-message input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            margin-right: 10px;
+        }
+        .send-message button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .send-message button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="chat-header">Chat Inbox</div>
-        <div class="chat-body" id="chatBody"></div>
-        <div class="chat-footer">
-            <input type="text" id="messageInput" placeholder="Type your message here..." required>
+        <h1>Inbox</h1>
+        <div id="messages"></div>
+        <div class="send-message">
+            <input type="text" id="recipient" placeholder="Recipient phone number">
+            <input type="text" id="message" placeholder="Type your message">
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
 
     <script>
-        const chatBody = document.getElementById('chatBody');
-        let recipientPhoneNumber = '';
-
-        function fetchMessages() {
-            fetch('/messages')
-                .then(response => response.json())
-                .then(data => {
-                    chatBody.innerHTML = '';
-                    data.forEach(message => {
-                        const messageElement = document.createElement('div');
-                        messageElement.classList.add('message');
-                        messageElement.classList.add(message.sent ? 'sent' : 'received');
-                        messageElement.innerText = `${message.name} (${message.from}): ${message.text}`;
-                        chatBody.appendChild(messageElement);
-                    });
-                })
-                .catch(error => console.error('Error fetching messages:', error));
+        async function fetchMessages() {
+            const response = await fetch('/messages');
+            const messages = await response.json();
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+            messages.forEach(message => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                messageDiv.innerHTML = `
+                    <div>
+                        <p><strong>${message.name} (${message.from})</strong></p>
+                        <p>${message.text}</p>
+                    </div>
+                    <button class="delete-btn" onclick="deleteMessage('${message.id}')">Delete</button>
+                `;
+                messagesDiv.appendChild(messageDiv);
+            });
         }
 
-        function sendMessage() {
-            const messageInput = document.getElementById('messageInput');
-            const messageText = messageInput.value.trim();
+        async function sendMessage() {
+            const recipient = document.getElementById('recipient').value;
+            const message = document.getElementById('message').value;
 
-            if (!messageText || !recipientPhoneNumber) {
-                alert('Please select a message to reply and enter a message text.');
+            if (!recipient || !message) {
+                alert('Please enter both recipient and message.');
                 return;
             }
 
-            fetch('/send', {
+            const response = await fetch('/send', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ to: recipientPhoneNumber, message: messageText }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const sentMessageElement = document.createElement('div');
-                    sentMessageElement.classList.add('message', 'sent');
-                    sentMessageElement.innerText = `You: ${messageText}`;
-                    chatBody.appendChild(sentMessageElement);
-                    messageInput.value = '';
-                } else {
-                    alert(`Failed to send message: ${data.error}`);
-                }
-            })
-            .catch(error => console.error('Error sending message:', error));
+                body: JSON.stringify({ to: recipient, message })
+            });
+
+            if (response.ok) {
+                document.getElementById('recipient').value = '';
+                document.getElementById('message').value = '';
+                fetchMessages();
+            } else {
+                alert('Failed to send message.');
+            }
         }
 
-        // Initial fetch of messages
-        fetchMessages();
+        async function deleteMessage(id) {
+            const response = await fetch(`/delete/${id}`, {
+                method: 'DELETE'
+            });
 
-        // Fetch messages every 5 seconds
-        setInterval(fetchMessages, 5000);
+            if (response.ok) {
+                fetchMessages();
+            } else {
+                alert('Failed to delete message.');
+            }
+        }
+
+        fetchMessages();
     </script>
 </body>
 </html>

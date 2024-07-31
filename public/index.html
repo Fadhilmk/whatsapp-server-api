@@ -118,7 +118,7 @@
         messageDiv.className = 'message';
         messageDiv.innerHTML = `
           <div>
-            <p><strong>${message.name}</strong></p>
+            <p><strong>${message.name} (${number})</strong></p>
             <p>${message.text}</p>
           </div>
           <button class="delete-btn" onclick="deleteMessage('${message.id}')">Delete</button>

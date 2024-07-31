@@ -5,7 +5,6 @@ const path = require("path");
 
 const app = express();
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 const { GRAPH_API_TOKEN, BUSINESS_PHONE_NUMBER_ID, VERIFY_TOKEN, PORT } = process.env;
 
@@ -21,8 +20,8 @@ app.post('/webhook', async (req, res) => {
 
       if (receivedMessages && receivedMessages.length > 0) {
         const message = receivedMessages[0];
-        const from = message.from;
-        const text = message.text && message.text.body ? message.text.body : "";
+        const from = message.from; // Phone number of the sender
+        const text = message.text && message.text.body ? message.text.body : ""; // Text of the received message
 
         console.log("Received message:", text);
 
@@ -30,8 +29,10 @@ app.post('/webhook', async (req, res) => {
           messagesByNumber[from] = [];
         }
 
+        // Store the received message
         messagesByNumber[from].push({ id: `${Date.now()}`, text, name: from, sent: false });
 
+        // Mark the message as read
         await axios({
           method: "POST",
           url: `https://graph.facebook.com/v20.0/${BUSINESS_PHONE_NUMBER_ID}/messages`,
@@ -90,6 +91,7 @@ app.post('/send', async (req, res) => {
       messagesByNumber[to] = [];
     }
 
+    // Store the sent message
     messagesByNumber[to].push({ id: `${Date.now()}`, text: message, name: 'You', sent: true });
 
     res.status(200).send('Message sent');
@@ -99,7 +101,9 @@ app.post('/send', async (req, res) => {
   }
 });
 
-const port = PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server is listening on port ${port}`);
+// Serve the HTML files
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.listen(PORT || 3000, () => {
+  console.log(`Server is listening on port ${PORT || 3000}`);
 });

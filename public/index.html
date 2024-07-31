@@ -1,77 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Send Message</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        button {
-            background-color: #4682B4;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #357ABD;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inbox</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+    }
+    .number {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      cursor: pointer;
+    }
+    .number:hover {
+      background-color: #f0f0f0;
+    }
+    .number p {
+      margin: 0;
+    }
+    .message {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    .message:last-child {
+      border-bottom: none;
+    }
+    .message p {
+      margin: 0;
+    }
+    .delete-btn {
+      background-color: #ff4d4d;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .delete-btn:hover {
+      background-color: #e60000;
+    }
+    .send-message {
+      display: flex;
+      margin-top: 20px;
+    }
+    .send-message input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      margin-right: 10px;
+    }
+    .send-message button {
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .send-message button:hover {
+      background-color: #45a049;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Send a Message</h1>
-        <form id="messageForm">
-            <input type="text" id="recipient" placeholder="Recipient Phone Number" required />
-            <textarea id="message" rows="4" placeholder="Type your message here..." required></textarea>
-            <button type="submit">Send Message</button>
-        </form>
-        <div id="responseMessage"></div>
+  <div class="container">
+    <h1>Inbox</h1>
+    <div id="phone-numbers"></div>
+    <div id="messages"></div>
+    <div class="send-message">
+      <input type="text" id="message" placeholder="Type your message">
+      <button onclick="sendMessage()">Send</button>
     </div>
+  </div>
 
-    <script>
-        document.getElementById('messageForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            
-            const recipient = document.getElementById('recipient').value;
-            const message = document.getElementById('message').value;
+  <script>
+    let selectedNumber = '';
 
-            try {
-                const response = await fetch('/send', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ to: recipient, message })
-                });
+    async function fetchPhoneNumbers() {
+      const response = await fetch('/messages');
+      const messages = await response.json();
+      const phoneNumbersDiv = document.getElementById('phone-numbers');
+      phoneNumbersDiv.innerHTML = '';
 
-                if (response.ok) {
-                    document.getElementById('responseMessage').innerText = 'Message sent successfully!';
-                } else {
-                    const errorData = await response.json();
-                    document.getElementById('responseMessage').innerText = `Failed to send message: ${errorData.error}`;
-                }
-            } catch (error) {
-                document.getElementById('responseMessage').innerText = `Error: ${error.message}`;
-            }
-        });
-    </script>
+      Object.keys(messages).forEach(number => {
+        const numberDiv = document.createElement('div');
+        numberDiv.className = 'number';
+        numberDiv.innerHTML = `<p>${number}</p>`;
+        numberDiv.onclick = () => loadMessages(number);
+        phoneNumbersDiv.appendChild(numberDiv);
+      });
+    }
+
+    async function loadMessages(number) {
+      selectedNumber = number;
+      const response = await fetch(`/messages/${number}`);
+      const messages = await response.json();
+      const messagesDiv = document.getElementById('messages');
+      messagesDiv.innerHTML = '';
+      messages.forEach(message => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message';
+        messageDiv.innerHTML = `
+          <div>
+            <p><strong>${message.name}</strong></p>
+            <p>${message.text}</p>
+          </div>
+          <button class="delete-btn" onclick="deleteMessage('${message.id}')">Delete</button>
+        `;
+        messagesDiv.appendChild(messageDiv);
+      });
+    }
+
+    async function sendMessage() {
+      const message = document.getElementById('message').value;
+
+      if (!selectedNumber || !message) {
+        alert('Please select a recipient and enter a message.');
+        return;
+      }
+
+      const response = await fetch('/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ to: selectedNumber, message })
+      });
+
+      if (response.ok) {
+        document.getElementById('message').value = '';
+        loadMessages(selectedNumber);
+      } else {
+        alert('Failed to send message.');
+      }
+    }
+
+    async function deleteMessage(id) {
+      const response = await fetch(`/delete/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        loadMessages(selectedNumber);
+      } else {
+        alert('Failed to delete message.');
+      }
+    }
+
+    fetchPhoneNumbers();
+  </script>
 </body>
 </html>

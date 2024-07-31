@@ -69,21 +69,15 @@ app.use(bodyParser.json());
 
 const { GRAPH_API_TOKEN, BUSINESS_PHONE_NUMBER_ID, VERIFY_TOKEN, PORT } = process.env;
 
-let messages = [];
-
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, "public")));
+let messagesByNumber = {};
 
 // Webhook endpoint to receive messages
-app.post("/webhook", async (req, res) => {
-  try {
-    const { object, entry } = req.body;
+app.post('/webhook', async (req, res) => {
+  const body = req.body;
 
-    if (object === "whatsapp_business_account") {
-      const changes = entry[0].changes[0];
-      const receivedMessages = changes.value.messages;
-      const contacts = changes.value.contacts;
-      const name = contacts && contacts[0] && contacts[0].profile && contacts[0].profile.name ? contacts[0].profile.name : "Customer";
+  if (body.object) {
+    body.entry.forEach(async (entry) => {
+      const receivedMessages = entry.messaging;
 
       if (receivedMessages && receivedMessages.length > 0) {
         const message = receivedMessages[0];
@@ -92,8 +86,12 @@ app.post("/webhook", async (req, res) => {
 
         console.log("Received message:", text);
 
+        if (!messagesByNumber[from]) {
+          messagesByNumber[from] = [];
+        }
+
         // Store the received message
-        messages.push({ id: `${Date.now()}`, from, text, name, sent: false });
+        messagesByNumber[from].push({ id: `${Date.now()}`, text, name: from, sent: false });
 
         // Mark the message as read
         await axios({
@@ -112,99 +110,69 @@ app.post("/webhook", async (req, res) => {
 
         console.log("Message marked as read");
       }
-    }
+    });
 
-    res.sendStatus(200);
-  } catch (error) {
-    console.error("Error processing webhook:", error);
-    res.sendStatus(500);
+    res.status(200).send('EVENT_RECEIVED');
+  } else {
+    res.sendStatus(404);
   }
 });
 
-// Endpoint to fetch stored messages
-app.get("/messages", (req, res) => {
-  res.json(messages);
+// Endpoint to fetch all messages grouped by phone number
+app.get('/messages', (req, res) => {
+  res.json(messagesByNumber);
+});
+
+// Endpoint to fetch messages for a specific phone number
+app.get('/messages/:number', (req, res) => {
+  const { number } = req.params;
+  res.json(messagesByNumber[number] || []);
 });
 
 // Endpoint to send a message
-app.post("/send", async (req, res) => {
+app.post('/send', async (req, res) => {
+  const { to, message } = req.body;
+
   try {
-    const { to, message } = req.body;
-
-    if (!to || !message) {
-      return res.status(400).json({
-        error: "Recipient phone number and message text are required",
-      });
-    }
-
-    // Send the message
     await axios({
-      method: "POST",
+      method: 'POST',
       url: `https://graph.facebook.com/v20.0/${BUSINESS_PHONE_NUMBER_ID}/messages`,
       headers: {
         Authorization: `Bearer ${GRAPH_API_TOKEN}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json'
       },
       data: {
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
+        messaging_product: 'whatsapp',
         to,
-        type: "text",
-        text: {
-          preview_url: false,
-          body: message,
-        },
-      },
+        text: { body: message }
+      }
     });
 
-    console.log(`Message sent to ${to}: ${message}`);
+    if (!messagesByNumber[to]) {
+      messagesByNumber[to] = [];
+    }
 
     // Store the sent message
-    messages.push({ id: `${Date.now()}`, from: to, text: message, name: "You", sent: true });
+    messagesByNumber[to].push({ id: `${Date.now()}`, text: message, name: 'You', sent: true });
 
-    res.status(200).json({ success: true });
+    res.status(200).send('Message sent');
   } catch (error) {
-    console.error("Error sending message:", error);
-    res.status(500).json({ error: "Failed to send message" });
+    console.error('Error sending message:', error);
+    res.status(500).send('Failed to send message');
   }
 });
 
 // Endpoint to delete a message
-app.delete("/delete/:id", (req, res) => {
+app.delete('/delete/:id', (req, res) => {
   const { id } = req.params;
-  const messageIndex = messages.findIndex(msg => msg.id === id);
-  if (messageIndex === -1) {
-    return res.status(404).json({ success: false, error: "Message not found." });
+
+  for (const number in messagesByNumber) {
+    messagesByNumber[number] = messagesByNumber[number].filter(message => message.id !== id);
   }
-  messages.splice(messageIndex, 1);
-  res.json({ success: true });
+
+  res.status(200).send('Message deleted');
 });
 
-// Endpoint for webhook verification
-app.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
-
-  if (mode && token) {
-    if (mode === "subscribe" && token === VERIFY_TOKEN) {
-      console.log("Webhook verified");
-      res.status(200).send(challenge);
-    } else {
-      res.sendStatus(403);
-    }
-  } else {
-    res.sendStatus(400);
-  }
+app.listen(3000, () => {
+  console.log('Server is listening on port 3000');
 });
-
-// Serve the inbox HTML file at the /inbox route
-app.get("/inbox", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "inbox.html"));
-});
-
-const port = PORT || 3000;
-app.listen(port, () => {
-  console.log(`Server is listening on port: ${port}`);
-});
-
